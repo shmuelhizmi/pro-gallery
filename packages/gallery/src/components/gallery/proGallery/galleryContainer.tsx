@@ -20,32 +20,47 @@ import VideoScrollHelperWrapper from '../../helpers/videoScrollHelperWrapper';
 import findNeighborItem from '../../helpers/layoutUtils';
 import ImageRenderer from '../../item/imageRenderer';
 
-export class GalleryContainer extends React.Component {
+declare global {
+  interface Window {
+    isMock: boolean;
+  }
+}
+
+
+interface State {
+  pgScroll: number;
+  showMoreClickedAtLeastOnce: boolean;
+  initialGalleryHeight?: number;
+  needToHandleShowMoreClick: boolean;
+  gotFirstScrollEvent: boolean;
+  playingVideoIdx: number;
+  viewComponent: any;
+  firstUserInteractionExecuted: boolean;
+  isInHover: boolean;
+  items: any;
+    options: any;
+    container: any;
+    structure: any;
+}
+
+export class GalleryContainer extends React.Component<any, State> {
+  videoScrollHelper: VideoScrollHelperWrapper;
+  layoutCss: string[];
+  initialGalleryState: Partial<State>;
+  _scrollingElement: { vertical: () => any; horizontal: () => any };
+  galleryStructure: any;
+
   constructor(props) {
     super(props);
     if (utils.isVerbose()) {
-      console.count('[OOISSR] galleryContainer constructor', window.isMock);
+      console.count('[OOISSR] galleryContainer constructor');
     }
-    this.getMoreItemsIfNeeded = this.getMoreItemsIfNeeded.bind(this);
-    this.setGotFirstScrollIfNeeded = this.setGotFirstScrollIfNeeded.bind(this);
-    this.toggleLoadMoreItems = this.toggleLoadMoreItems.bind(this);
-    this.scrollToItem = this.scrollToItem.bind(this);
-    this.scrollToGroup = this.scrollToGroup.bind(this);
+    this.bindClassFunctionsToInstance();
     this._scrollingElement = this.getScrollingElement();
-    this.eventsListener = this.eventsListener.bind(this);
-    this.onGalleryScroll = this.onGalleryScroll.bind(this);
-    this.setPlayingIdxState = this.setPlayingIdxState.bind(this);
-    this.getVisibleItems = this.getVisibleItems.bind(this);
-    this.findNeighborItem = this.findNeighborItem.bind(this);
-    this.setCurrentSlideshowViewIdx =
-      this.setCurrentSlideshowViewIdx.bind(this);
-    this.getIsScrollLessGallery = this.getIsScrollLessGallery.bind(this);
-    this.onMouseEnter = this.onMouseEnter.bind(this);
-    this.onMouseLeave = this.onMouseLeave.bind(this);
     this.videoScrollHelper = new VideoScrollHelperWrapper(
       this.setPlayingIdxState
     );
-    const initialState = {
+    const initialState: Partial<State> = {
       pgScroll: 0,
       showMoreClickedAtLeastOnce: false,
       initialGalleryHeight: undefined,
@@ -57,7 +72,7 @@ export class GalleryContainer extends React.Component {
       isInHover: false,
     };
 
-    this.state = initialState;
+    this.state = initialState as State;
     this.layoutCss = [];
 
     this.initialGalleryState = {};
@@ -73,10 +88,28 @@ export class GalleryContainer extends React.Component {
     this.state = {
       ...initialState,
       ...this.initialGalleryState,
-    };
+    } as State;
 
     //not sure if there needs to be a handleNEwGalleryStructure here with the intial state. currently looks like not
   }
+  bindClassFunctionsToInstance = () => {
+    this.getMoreItemsIfNeeded = this.getMoreItemsIfNeeded.bind(this);
+    this.setGotFirstScrollIfNeeded = this.setGotFirstScrollIfNeeded.bind(this);
+    this.toggleLoadMoreItems = this.toggleLoadMoreItems.bind(this);
+    this.scrollToItem = this.scrollToItem.bind(this);
+    this.scrollToGroup = this.scrollToGroup.bind(this);
+    this.eventsListener = this.eventsListener.bind(this);
+    this.onGalleryScroll = this.onGalleryScroll.bind(this);
+    this.setPlayingIdxState = this.setPlayingIdxState.bind(this);
+    this.getVisibleItems = this.getVisibleItems.bind(this);
+    this.findNeighborItem = this.findNeighborItem.bind(this);
+    this.setCurrentSlideshowViewIdx =
+      this.setCurrentSlideshowViewIdx.bind(this);
+    this.getIsScrollLessGallery = this.getIsScrollLessGallery.bind(this);
+    this.onMouseEnter = this.onMouseEnter.bind(this);
+    this.onMouseLeave = this.onMouseLeave.bind(this);
+  }
+
   initializeScrollPosition() {
     if (this.props.activeIndex > 0) {
       this.scrollToItem(this.props.activeIndex, false, true, 0);
@@ -381,17 +414,17 @@ export class GalleryContainer extends React.Component {
   }
 
   scrollToItem(
-    itemIdx,
+    itemIdx: number,
     fixedScroll,
-    isManual,
+    isManual: boolean,
     durationInMS = 0,
-    scrollMarginCorrection,
+    scrollMarginCorrection: boolean | undefined = undefined,
     isContinuousScrolling = false,
   ) {
     if (itemIdx >= 0) {
-      if(!this.state.gotFirstScrollEvent) {
+      if (!this.state.gotFirstScrollEvent) {
         this.setState({
-          gotFirstScrollEvent:true,
+          gotFirstScrollEvent: true,
         });
       }
       if (this.getIsScrollLessGallery(this.state.options)) {
@@ -540,15 +573,13 @@ export class GalleryContainer extends React.Component {
     const useSSROpacity =
       isPrerenderMode && !this.props.settings.disableSSROpacity;
     this.dynamicStyles = `
-      ${
-        !useSSROpacity
-          ? ''
-          : `#pro-gallery-${this.props.id} .gallery-item-container { opacity: 0 }`
+      ${!useSSROpacity
+        ? ''
+        : `#pro-gallery-${this.props.id} .gallery-item-container { opacity: 0 }`
       }
-      ${
-        !overlayBackground
-          ? ''
-          : `#pro-gallery-${this.props.id} .gallery-item-hover::before { background: ${overlayBackground} !important}`
+      ${!overlayBackground
+        ? ''
+        : `#pro-gallery-${this.props.id} .gallery-item-hover::before { background: ${overlayBackground} !important}`
       }
     `.trim();
   }
@@ -636,7 +667,7 @@ export class GalleryContainer extends React.Component {
     item?.offset && this.onGalleryScroll(item.offset);
   }
 
-  eventsListener(eventName, eventData, event) {
+  eventsListener(eventName: string, eventData: any, event = undefined) {
     this.videoScrollHelper.handleEvent({
       eventName,
       eventData,
