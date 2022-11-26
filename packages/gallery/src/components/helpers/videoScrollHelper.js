@@ -259,6 +259,9 @@ class VideoScrollHelper {
   }
 
   isVisible(item, { top, left }) {
+    if (!item) {
+      return false;
+    }
     const target = {
       offsetTop: this.scrollBase || 0,
       scrollY: top,
